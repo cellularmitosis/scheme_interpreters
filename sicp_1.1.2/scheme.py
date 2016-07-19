@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 
-# a scheme interpreter which can handle SICP through section 1.1.1 and exercise 1.1.1.
+# a scheme interpreter which can handle SICP through section 1.1.2 and exercise 1.1.2.
 
 import sys
 
 def main():
 	for combination in tokenize_combinations(read_source_file(), 0):
-		print evaluate(combination)
+		result = evaluate_combination(combination)
+		if result is not None:
+			print result
 
 def read_source_file():
 	source_fname = sys.argv[1]	
@@ -62,52 +64,35 @@ def tokenize_word(text, index):
 		index += 1
 	return (word, index)
 
-def evaluate(combination):
-	evaluated_combination = []
+def evaluate_combination(combination):
 	if type(combination) == list:
-		for token in combination:
-			if type(token) == list:
-				evaluated_combination.append(evaluate(token))
-			else:
-				evaluated_combination.append(token)
-	else:
-		evaluated_combination = combination
-	parsed_combination = parse_combination(evaluated_combination)
-	if type(parsed_combination) == list:
-		operator = parsed_combination[0]
-		operands = parsed_combination[1:]
+		evaluated = [evaluate_token(token) for token in combination]
+		operator = evaluated[0]
+		operands = evaluated[1:]
 		return operator(operands)
 	else:
-		return parsed_combination
+		return evaluate_token(combination)
 
-def parse_combination(combination):
-	if type(combination) == list:
-		operator = parse_operator(combination[0])
-		operands = [parse_operand(token) for token in combination[1:]]
-		return [operator] + operands
-	else:
-		return parse_operand(combination)
-
-def parse_operand(token):
-	if type(token) == str:
-		if "." in token:
+def evaluate_token(token):
+	if type(token) == list:
+		return evaluate_combination(token)
+	elif token in environment:
+		return environment[token]
+	elif type(token) == str:
+		if token_in_charset(token, "1234567890"):
+			return int(token)
+		elif token_in_charset(token, "1234567890."):
 			return float(token)
 		else:
-			return int(token)
+			return token
 	else:
-		return token
+		assert False, "Could not evaluate token: %s" % token
 
-def parse_operator(token):
-	if token == "+":
-		return add
-	elif token == "-":
-		return subtract
-	elif token == "*":
-		return multiply
-	elif token == "/":
-		return divide
-	else:
-		assert False, "unknown operator: %s" % token
+def token_in_charset(token, charset):
+	for ch in token:
+		if ch not in charset:
+			return False
+	return True
 
 def add(operands):
 	return reduce(lambda x, y: x + y, operands)
@@ -120,6 +105,22 @@ def multiply(operands):
 
 def divide(operands):
 	return reduce(lambda x, y: x / y, operands)
+
+def equals(operands):
+	return reduce(lambda x, y: x == y, operands)
+
+def define(operands):
+	(key, value) = operands
+	environment[key] = value
+
+environment = {
+	"+": add,
+	"-": subtract,
+	"*": multiply,
+	"/": divide,
+	"define": define,
+	"=": equals
+}
 
 if __name__ == "__main__":
 	main()
