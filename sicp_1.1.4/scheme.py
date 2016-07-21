@@ -66,6 +66,24 @@ def tokenize_word(text, index):
 		index += 1
 	return (word, index)
 
+def evaluate_combination(combination):
+	if type(combination) is list:
+		operator_name = combination[0]
+		if operator_name == "define":
+			define(combination[1:])
+			return None
+		elif operator_name in environment and type(environment[operator_name]) == Procedure:
+			procedure = environment[operator_name]
+			combination = substitute_combination(combination, procedure)
+			return evaluate_combination(combination)
+		else:
+			combination = [evaluate_token(token) for token in combination]
+		operator = combination[0]
+		operands = combination[1:]
+		return operator(operands)
+	else:
+		return evaluate_token(combination)
+
 def substitute_combination(existing_combination, procedure):
 	substituted_combination = []
 	substituted_operator = procedure.body[0]
@@ -90,24 +108,6 @@ def substitute_combination(existing_combination, procedure):
 			if index is None:
 				substituted_combination.append(token)				
 	return substituted_combination
-
-def evaluate_combination(combination):
-	if type(combination) is list:
-		operator_name = combination[0]
-		if operator_name == "define":
-			define(combination[1:])
-			return None
-		elif operator_name in environment and type(environment[operator_name]) == Procedure:
-			procedure = environment[operator_name]
-			combination = substitute_combination(combination, procedure)
-			return evaluate_combination(combination)
-		else:
-			combination = [evaluate_token(token) for token in combination]
-		operator = combination[0]
-		operands = combination[1:]
-		return operator(operands)
-	else:
-		return evaluate_token(combination)
 
 def evaluate_token(token):
 	if type(token) is list:
