@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# a scheme interpreter which can handle SICP through section 1.1.2 and exercise 1.1.2.
+# a scheme interpreter which can handle SICP through section 1.1.4.
 
 import sys
 import pprint
@@ -66,67 +66,69 @@ def tokenize_word(text, index):
 		index += 1
 	return (word, index)
 
-def substitute_combination(existing_combination, procedure_definition_tuple):
-	(procedure_declaration, procedure_body) = procedure_definition_tuple
+def substitute_combination(existing_combination, procedure):
 	substituted_combination = []
-	substituted_operator = procedure_body[0]
+	substituted_operator = procedure.body[0]
 	substituted_combination.append(substituted_operator)
-	for parameter_name in procedure_body[1:]:
-		if type(parameter_name) == list:
-			substituted_combination.append(substitute_combination(existing_combination, (procedure_declaration, parameter_name)))
-		elif parameter_name in environment:
-			if type(environment[token]) is not tuple:
-				return environment[token]
+	for token in procedure.body[1:]:
+		if type(token) is list:
+			sub_procedure = Procedure(procedure.name, procedure.parameter_names, token)
+			substituted_combination.append(substitute_combination(existing_combination, sub_procedure))
+		elif token in environment:
+			substituted_combination = environment[token]
+			if type(substituted_combination) is not Procedure:
+				return substituted_combination
 			else:
 				assert False
 		else:
 			index = None
-			for i in range(1, len(procedure_declaration)):
-				if procedure_declaration[i] == parameter_name:
+			for i in range(0, len(procedure.parameter_names)):
+				if procedure.parameter_names[i] == token:
 					index = i
-					substituted_combination.append(existing_combination[index])
+					substituted_combination.append(existing_combination[index+1])
 					break
 			if index is None:
-				substituted_combination.append(parameter_name)				
+				substituted_combination.append(token)				
 	return substituted_combination
 
 def evaluate_combination(combination):
-	if type(combination) == list:
-		if combination[0] == "define":
+	if type(combination) is list:
+		operator_name = combination[0]
+		if operator_name == "define":
 			define(combination[1:])
 			return None
-		procedure_tuple = procedure_for_name(combination[0])
-		if procedure_tuple is not None:
-			substituted_combination = substitute_combination(combination, procedure_tuple)
-			return evaluate_combination(substituted_combination)
+		elif operator_name in environment and type(environment[operator_name]) == Procedure:
+			procedure = environment[operator_name]
+			combination = substitute_combination(combination, procedure)
+			return evaluate_combination(combination)
 		else:
-			evaluated_tokens = [evaluate_token(token) for token in combination]
-			operator = evaluated_tokens[0]
-			operands = evaluated_tokens[1:]
-			return operator(operands)
+			combination = [evaluate_token(token) for token in combination]
+		operator = combination[0]
+		operands = combination[1:]
+		return operator(operands)
 	else:
 		return evaluate_token(combination)
 
 def evaluate_token(token):
-	if type(token) == list:
+	if type(token) is list:
 		return evaluate_combination(token)
 	elif token in environment:
-		if type(environment[token]) is not tuple:
+		if type(environment[token]) is not Procedure:
 			token = environment[token]
-			if type(token) == str:
+			if type(token) is str:
 				if token_in_charset(token, "1234567890"):
 					return int(token)
 				elif token_in_charset(token, "1234567890."):
 					return float(token)
 				else:
 					return token
-			elif type(token) == list:
+			elif type(token) is list:
 				return evaluate_combination(token)
 			else:
 				return token
 		else:
 			assert False
-	elif type(token) == str:
+	elif type(token) is str:
 		if token_in_charset(token, "1234567890"):
 			return int(token)
 		elif token_in_charset(token, "1234567890."):
@@ -158,12 +160,14 @@ def equals(operands):
 	return reduce(lambda x, y: x == y, operands)
 
 def define(operands):
-	if type(operands[0]) == str:
+	if type(operands[0]) is str:
 		environment[operands[0]] = operands[1]
 	else:
-		(procedure_declaration, procedure_body) = operands
-		procedure_name = procedure_declaration[0]
-		environment[procedure_name] = (procedure_declaration, procedure_body)
+		(declaration, body) = operands
+		name = declaration[0]
+		parameter_names = declaration[1:]	
+		procedure = Procedure(name, parameter_names, body)
+		environment[procedure.name] = procedure
 
 environment = {
 	"+": add,
@@ -173,13 +177,11 @@ environment = {
 	"=": equals
 }
 
-def procedure_for_name(name):
-	for (k, v) in environment.iteritems():
-		if type(v) == tuple:
-			procedure_name = k
-			if procedure_name == name:
-				return v
-	return None
+class Procedure(object):
+	def __init__(self, name, parameter_names, body):
+		self.name = name
+		self.parameter_names = parameter_names
+		self.body = body
 
 if __name__ == "__main__":
 	main()
