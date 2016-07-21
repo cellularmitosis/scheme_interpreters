@@ -113,21 +113,7 @@ def evaluate_token(token):
 	if type(token) is list:
 		return evaluate_combination(token)
 	elif token in environment:
-		if type(environment[token]) is not Procedure:
-			token = environment[token]
-			if type(token) is str:
-				if token_in_charset(token, "1234567890"):
-					return int(token)
-				elif token_in_charset(token, "1234567890."):
-					return float(token)
-				else:
-					return token
-			elif type(token) is list:
-				return evaluate_combination(token)
-			else:
-				return token
-		else:
-			assert False
+		return evaluate_token(environment[token])
 	elif type(token) is str:
 		if token_in_charset(token, "1234567890"):
 			return int(token)
@@ -136,7 +122,7 @@ def evaluate_token(token):
 		else:
 			return token
 	else:
-		assert False, "Could not evaluate token: %s" % token
+		return token
 
 def token_in_charset(token, charset):
 	for ch in token:
