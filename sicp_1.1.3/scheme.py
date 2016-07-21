@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# a scheme interpreter which can handle SICP through section 1.1.2 and exercise 1.1.2.
+# a scheme interpreter which can handle SICP through section 1.1.3.
 
 import sys
 
