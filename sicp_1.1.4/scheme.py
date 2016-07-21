@@ -3,6 +3,7 @@
 # a scheme interpreter which can handle SICP through section 1.1.2 and exercise 1.1.2.
 
 import sys
+import pprint
 
 def main():
 	for statement in tokenize_statements(read_source_file(), 0):
@@ -70,13 +71,22 @@ def substitute_combination(existing_combination, procedure_definition_tuple):
 	substituted_operator = procedure_body[0]
 	substituted_combination.append(substituted_operator)
 	for parameter_name in procedure_body[1:]:
-		index = None
-		for i in range(1, len(procedure_declaration)):
-			if procedure_declaration[i] == parameter_name:
-				index = i
-				break
-		assert index is not None
-		substituted_combination.append(existing_combination[index])
+		if type(parameter_name) == list:
+			substituted_combination.append(substitute_combination(existing_combination, (procedure_declaration, parameter_name)))
+		elif parameter_name in environment:
+			if type(environment[token]) is not tuple:
+				return environment[token]
+			else:
+				assert False
+		else:
+			index = None
+			for i in range(1, len(procedure_declaration)):
+				if procedure_declaration[i] == parameter_name:
+					index = i
+					substituted_combination.append(existing_combination[index])
+					break
+			if index is None:
+				substituted_combination.append(parameter_name)				
 	return substituted_combination
 
 def evaluate_combination(combination):
@@ -101,7 +111,18 @@ def evaluate_token(token):
 		return evaluate_combination(token)
 	elif token in environment:
 		if type(environment[token]) is not tuple:
-			return environment[token]
+			token = environment[token]
+			if type(token) == str:
+				if token_in_charset(token, "1234567890"):
+					return int(token)
+				elif token_in_charset(token, "1234567890."):
+					return float(token)
+				else:
+					return token
+			elif type(token) == list:
+				return evaluate_combination(token)
+			else:
+				return token
 		else:
 			assert False
 	elif type(token) == str:
@@ -136,9 +157,12 @@ def equals(operands):
 	return reduce(lambda x, y: x == y, operands)
 
 def define(operands):
-	(procedure_declaration, procedure_body) = operands
-	procedure_name = procedure_declaration[0]
-	environment[procedure_name] = (procedure_declaration, procedure_body)
+	if type(operands[0]) == str:
+		environment[operands[0]] = operands[1]
+	else:
+		(procedure_declaration, procedure_body) = operands
+		procedure_name = procedure_declaration[0]
+		environment[procedure_name] = (procedure_declaration, procedure_body)
 
 environment = {
 	"+": add,
