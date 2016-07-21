@@ -20,17 +20,18 @@ def tokenize_statements(text, index):
 	statements = []
 	while index < len(text):
 		ch = text[index]
-		if ch == "(":
+		if ch in [" ", "\n"]:
+			pass
+		elif ch == "(":
 			(combination, new_index) = tokenize_combination(text, index)
 			statements.append(combination)
 			index = new_index
 			assert text[index] == ")"
-		elif ch not in [" ", "\n"]:
+		else:
 			(literal, new_index) = tokenize_word(text, index)
 			statements.append(literal)
 			index = new_index
 		index += 1
-		continue
 	return statements
 
 def tokenize_combination(text, index):
@@ -38,15 +39,15 @@ def tokenize_combination(text, index):
 	index += 1
 	tokens = []
 	while index < len(text):
-		if text[index] == ")":
+		ch = text[index]
+		if ch == ")":
 			break
-		elif text[index] == "(":
+		elif ch in [" ", "\n"]:
+			index += 1
+		elif ch == "(":
 			(combination, new_index) = tokenize_combination(text, index)
 			tokens.append(combination)
 			index = new_index + 1
-		elif text[index] in [" ", "\n"]:
-			index += 1
-			continue
 		else:
 			(word, new_index) = tokenize_word(text, index)
 			if len(word) > 0:
