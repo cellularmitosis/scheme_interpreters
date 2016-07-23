@@ -12,10 +12,11 @@ for f in \
 ../sicp_1.1.2/ex_1.1.2 \
 ../sicp_1.1.3/text_1.1.3 \
 ../sicp_1.1.4/text_1.1.4 \
-text_1.1.6 \
-ex_1.3 \
-ex_1.4 \
-ex_1.5
+../sicp_1.1.6/text_1.1.6 \
+../sicp_1.1.6/ex_1.3 \
+../sicp_1.1.6/ex_1.4 \
+../sicp_1.1.6/ex_1.5 \
+text_1.1.7
 do
     echo "Testing $f.in"
     ./scheme.py $f.in > "${TMP}"
