@@ -1,0 +1,4 @@
+(define (mystery a b)
+  ((if (> b 0) + -) a b))
+(mystery 2 1)
+(mystery 2 -1)
